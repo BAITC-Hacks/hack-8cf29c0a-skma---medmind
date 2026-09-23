@@ -5,6 +5,8 @@ export default {
   theme: {
     extend: {
       colors: {
+        'chart-series-1': 'var(--chart-series-1)',
+        'chart-series-2': 'var(--chart-series-2)',
         'page-bg': 'var(--page-bg)',
         surface: 'var(--surface)',
         border: 'var(--border)',

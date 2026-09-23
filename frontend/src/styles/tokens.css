@@ -15,6 +15,10 @@
   --accent-subtle-text: #01678e;
   --accent-focus-ring: #2c7294;
 
+  --chart-series-1: #2686b1;
+  --chart-series-2: #eb6834;
+  --chart-sequential-500: #1477a0;
+
   --status-good: #0ca30c;
   --status-warning: #fab219;
   --status-serious: #ec835a;
@@ -24,6 +28,8 @@
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) {
     color-scheme: dark;
+    --chart-series-1: #3995c1;
+    --chart-series-2: #d95926;
     --page-bg: #090e11;
     --surface: #151b1f;
     --border: #272f34;
@@ -43,6 +49,8 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --chart-series-1: #3995c1;
+  --chart-series-2: #d95926;
   --page-bg: #090e11;
   --surface: #151b1f;
   --border: #272f34;
