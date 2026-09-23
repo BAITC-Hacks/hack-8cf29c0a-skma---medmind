@@ -119,7 +119,7 @@ Git-репозиторий + README (методология расчёта, ал
 └───────┬─────────┘   └──────────┬────────────┘   └────────┬─────────┘
         │                        │                          │
 ┌───────▼────────────────────────▼──────────────────────────▼───────┐
-│                         DATA LAYER (PostgreSQL)                    │
+│                         DATA LAYER (SQLite)                        │
 │  sales_transactions · stock_snapshots · goods_in_transit ·         │
 │  suppliers · moq_rules · categories · sku_master · stockout_events │
 │  · calc_runs · order_recommendations · audit_log                   │
@@ -143,7 +143,7 @@ Git-репозиторий + README (методология расчёта, ал
 ### 3.3 Стек (предложение)
 
 - **Backend/расчёт**: Python + FastAPI + pandas/numpy/statsmodels
-- **БД**: PostgreSQL
+- **БД**: SQLite через SQLAlchemy, файловая база `backend/var/hackalem.db`, режим WAL
 - **Планировщик**: Celery / APScheduler для периодических расчётов
 - **Frontend**: React + TypeScript
 - **Экспорт**: openpyxl (Excel/CSV совместимые с 1С), PDF-рендер

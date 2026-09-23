@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Bar, BarChart, CartesianGrid, LabelList, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { useCalcRun } from '../../shared/calc-run/CalcRunContext';
+import { useCalcRun } from '../../shared/calc-run/useCalcRun';
 import { Icon } from '../../shared/ui/Icon';
 import { Select } from '../../shared/ui/Select';
 import { categories, getDashboardData } from './mockData';

@@ -1,0 +1,49 @@
+[project]
+name = "hackalem-backend"
+version = "0.1.0"
+description = "Backend: расчёт рекомендованных заказов поставщикам (HackAlem AI × Электрокомплект)"
+authors = [
+    { name = "s-webs", email = "swebs.sh@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.141.1",
+    "numpy>=2.5.3",
+    "openpyxl>=3.1.5",
+    "pandas>=3.0.6",
+    "pydantic-settings>=2.15.0",
+    "python-calamine>=0.8.2",
+    "python-multipart>=0.0.32",
+    "sqlalchemy>=2.0.54",
+    "uvicorn[standard]>=0.53.0",
+]
+
+[project.scripts]
+hackalem = "app.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.12.18,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "app"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+    "ruff>=0.16.8",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Body"]
