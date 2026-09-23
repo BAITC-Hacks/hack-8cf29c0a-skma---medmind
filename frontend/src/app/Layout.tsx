@@ -7,6 +7,7 @@ import { Select } from '../shared/ui/Select';
 
 const NAV_ITEMS: { to: string; label: string; icon: IconName }[] = [
   { to: '/orders', label: 'Заказы', icon: 'orders' },
+  { to: '/products', label: 'Товары', icon: 'dashboard' },
   { to: '/dashboard', label: 'Дашборд', icon: 'dashboard' },
   { to: '/settings', label: 'Настройки', icon: 'settings' },
 ];

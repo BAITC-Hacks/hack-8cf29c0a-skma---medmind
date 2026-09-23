@@ -3,6 +3,7 @@ import { Layout } from './Layout';
 import { OrdersPage } from '../pages/OrdersPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { SettingsPage } from '../pages/SettingsPage';
+import { ProductsPage } from '../pages/ProductsPage';
 
 export const router = createBrowserRouter([
   {
@@ -11,6 +12,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/orders" replace /> },
       { path: 'orders', element: <OrdersPage /> },
+      { path: 'products', element: <ProductsPage /> },
       { path: 'dashboard', element: <DashboardPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
