@@ -1,6 +1,7 @@
 import type { SVGProps } from 'react';
 
 const paths = {
+  history: 'M3 11a9 9 0 1 1 2.6 7 M3 4v7h7 M12 7v5l4 2',
   orders: 'M8 3h8v4H8z M6 5H4v16h16V5h-2 M8 11h8 M8 15h5',
   dashboard: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
   settings: 'M4 7h16 M4 17h16 M8 4v6 M16 14v6',

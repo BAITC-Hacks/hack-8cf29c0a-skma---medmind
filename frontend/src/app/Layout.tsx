@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useTheme } from '../shared/theme/ThemeContext';
 import { useCalcRun } from '../shared/calc-run/useCalcRun';
 import { Button } from '../shared/ui/Button';
@@ -8,6 +8,7 @@ import { Select } from '../shared/ui/Select';
 const NAV_ITEMS: { to: string; label: string; icon: IconName }[] = [
   { to: '/orders', label: 'Заказы', icon: 'orders' },
   { to: '/products', label: 'Товары', icon: 'dashboard' },
+  { to: '/sales', label: 'История продаж', icon: 'history' },
   { to: '/dashboard', label: 'Дашборд', icon: 'dashboard' },
   { to: '/settings', label: 'Настройки', icon: 'settings' },
 ];
@@ -24,7 +25,7 @@ function Sidebar() {
       <nav aria-label="Основная навигация" className="flex gap-2 lg:flex-col">
         {NAV_ITEMS.map((item) => (
           <NavLink key={item.to} to={item.to} className={({ isActive }) => `flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-xs font-semibold sm:flex-row sm:gap-2 sm:px-3 sm:text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-focus-ring active:bg-page-bg lg:justify-start lg:gap-3 ${isActive ? 'bg-accent-subtle-bg text-accent-subtle-text' : 'text-text-secondary hover:bg-page-bg hover:text-accent-text'}`}>
-            <Icon name={item.icon} className="shrink-0" /><span>{item.label}</span>
+            <Icon name={item.icon} className="shrink-0" /><span className="text-center lg:text-left">{item.label}</span>
           </NavLink>
         ))}
       </nav>
@@ -37,6 +38,7 @@ function Sidebar() {
 }
 
 function Header() {
+  const { pathname } = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { runs, selectedRunId, setSelectedRunId, isLoading } = useCalcRun();
   const options = runs.map((run) => ({ value: run.id, label: `${new Date(run.created_at).toLocaleDateString('ru-RU')} · ${STATUS_LABEL[run.status] ?? run.status}` }));
@@ -44,8 +46,10 @@ function Header() {
     <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-1 pb-6 pt-2">
       <div><p className="mb-1 text-xs text-text-secondary">Компания</p><p className="text-sm font-semibold">ТОО «Электрокомплект»</p></div>
       <div className="flex w-full flex-wrap items-center gap-3 xl:w-auto">
-        {isLoading ? <span className="text-sm text-text-secondary" role="status">Загрузка расчётов…</span> : options.length === 0 ? <span className="text-sm text-text-secondary">Нет доступных расчётов</span> : <Select aria-label="Выбор прогона расчёта" options={options} value={selectedRunId} onChange={setSelectedRunId} className="flex-1 sm:flex-none" />}
-        <Button variant="primary" disabled title="Запуск пересчёта будет доступен после подключения сервера"><Icon name="spark" />Пересчитать</Button>
+        {pathname === '/sales' ? <span className="mr-auto flex items-center gap-2 text-sm text-text-secondary"><Icon name="history" />Журнал операций · Алматы</span> : <>
+          {isLoading ? <span className="text-sm text-text-secondary" role="status">Загрузка расчётов…</span> : options.length === 0 ? <span className="text-sm text-text-secondary">Нет доступных расчётов</span> : <Select aria-label="Выбор прогона расчёта" options={options} value={selectedRunId} onChange={setSelectedRunId} className="flex-1 sm:flex-none" />}
+          <Button variant="primary" disabled title="Запуск пересчёта будет доступен после подключения сервера"><Icon name="spark" />Пересчитать</Button>
+        </>}
         <button type="button" onClick={toggleTheme} aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface text-text-secondary transition-colors hover:bg-accent-subtle-bg hover:text-accent-text active:bg-page-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-focus-ring"><Icon name={theme === 'light' ? 'moon' : 'sun'} /></button>
         <div aria-label="Компания Электрокомплект" className="hidden h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-xs font-semibold text-text-secondary sm:flex">ЭК</div>
       </div>
