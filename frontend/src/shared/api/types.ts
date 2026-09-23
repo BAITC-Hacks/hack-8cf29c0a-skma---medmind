@@ -52,6 +52,8 @@ export interface OrderProduct {
 
 export interface ExplanationDetail {
   sku_code: string;
+  forecast_demand?: number;
+  stock_source?: 'actual' | 'estimated' | 'unknown';
   base_demand: number;
   seasonality_factor: number;
   growth_factor: number;

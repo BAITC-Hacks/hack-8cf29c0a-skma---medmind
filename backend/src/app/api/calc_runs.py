@@ -1,5 +1,6 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy import select
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -37,6 +38,10 @@ def start_run(background: BackgroundTasks, body: schemas.CalcRunCreate | None = 
         raise HTTPException(409, "Расчёт уже выполняется")
     if db.scalar(select(models.Sku.code).limit(1)) is None:
         raise HTTPException(409, "В каталоге нет товаров. Загрузите отчёты или добавьте товары перед расчётом.")
-    run = create_run(db, horizon_days=body.horizon_days if body else None)
+    try:
+        run = create_run(db, horizon_days=body.horizon_days if body else None)
+    except OperationalError as exc:
+        db.rollback()
+        raise HTTPException(409, "Данные обновляются. Повторите запуск расчёта через несколько секунд.") from exc
     background.add_task(execute_run, run.id)
     return _to_schema(run)

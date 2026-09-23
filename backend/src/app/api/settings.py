@@ -7,6 +7,7 @@ from app import models, schemas
 from app.db import get_db
 from app.services import assistant_settings
 from app.services.calc_runs import get_params
+from app.services.input_data import begin_write
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -72,6 +73,7 @@ def list_rules(supplier_id: str | None = None, db: Session = Depends(get_db)):
 
 @router.put("/supplier-rules/{rule_id}", response_model=schemas.SupplierRule)
 def update_rule(rule_id: int, body: schemas.SupplierRuleUpdate, db: Session = Depends(get_db)):
+    begin_write(db)
     rule = db.get(models.SupplierRule, rule_id)
     if rule is None:
         raise HTTPException(404, "Правило не найдено")

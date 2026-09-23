@@ -23,11 +23,11 @@ export function SupplierImport() {
     try {
       const body = new FormData(); body.set('file', file); body.set('dry_run', String(!apply)); body.set('replace_supplier', String(apply && confirmed));
       const response = await fetch(`${API_BASE}/imports/supplier-bundle/${supplier}`, { method: 'POST', body });
-      const result = await response.json();
-      if (!response.ok) throw new Error(typeof result.detail === 'string' ? result.detail : 'Не удалось прочитать отчёты. Проверьте комплект файлов.');
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result) throw new Error(typeof result?.detail === 'string' ? result.detail : 'Не удалось прочитать отчёты. Проверьте комплект файлов и повторите загрузку.');
       setReport(result);
       if (result.applied) await cache.invalidateQueries();
-    } catch (failure) { setReport(null); setConfirmed(false); setError(failure instanceof Error ? failure.message : 'Не удалось загрузить отчёты. Повторите попытку.'); }
+    } catch (failure) { setReport(null); setConfirmed(false); setError(failure instanceof TypeError ? 'Сервер недоступен. Повторите загрузку.' : failure instanceof Error ? failure.message : 'Не удалось загрузить отчёты. Повторите попытку.'); }
     finally { setBusy(false); }
   }
   return <details className="rounded-3xl border border-border bg-surface p-5">

@@ -134,16 +134,20 @@ function OrderDetailContent({
                   {[
                     [
                       'Базовый спрос',
-                      'На горизонт выбранного расчёта',
-                      `${number(data.base_demand)} ${order.unit}`,
+                      'Средний месячный спрос с учётом дефицита',
+                      `${number(data.base_demand)} ${order.unit}/мес`,
                     ],
                     ['Сезонность', 'Изменение спроса в этом периоде', `× ${number(data.seasonality_factor)}`],
                     ['Рост спроса', 'Устойчивый тренд продаж', `× ${number(data.growth_factor)}`],
                     [
                       'Компенсация дефицита',
-                      'Спрос за дни без товара',
-                      `+ ${number(data.stockout_compensation)} ${order.unit}`,
+                      'Уже включена в базовый месячный спрос',
+                      `${number(data.stockout_compensation)} ${order.unit}/мес`,
                     ],
+                    ...(data.forecast_demand !== undefined ? [[
+                      'Прогноз на период покрытия', 'Срок поставки и горизонт планирования',
+                      `${number(data.forecast_demand)} ${order.unit}`,
+                    ]] : []),
                     [
                       'Страховой запас',
                       'Буфер на колебания спроса',
@@ -160,7 +164,7 @@ function OrderDetailContent({
                   ))}
                 </dl>
                 <p className="mt-3 rounded-xl bg-page-bg p-3 text-xs leading-5 text-text-secondary">
-                  Спрос × сезонность × рост + компенсация + буфер − свободный остаток − товар в пути.
+                  Прогноз на период покрытия + страховой запас − свободный остаток − учитываемые поставки в пути.
                   Итог учитывает правила округления и минимальной партии товара.
                 </p>
               </section>

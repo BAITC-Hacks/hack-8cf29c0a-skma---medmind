@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.db import get_db
+from app.services.input_data import begin_write
 
 router = APIRouter(tags=["catalog"])
 
@@ -16,6 +17,7 @@ def list_suppliers(db: Session = Depends(get_db)):
 @router.put("/suppliers/{supplier_id}", response_model=schemas.Supplier)
 def update_supplier(supplier_id: str, body: schemas.SupplierUpdate, db: Session = Depends(get_db)):
     """Срок поставки поставщика (дней) — участвует в расчёте потребности и срочности."""
+    begin_write(db)
     supplier = db.get(models.Supplier, supplier_id)
     if supplier is None:
         raise HTTPException(404, "Поставщик не найден")

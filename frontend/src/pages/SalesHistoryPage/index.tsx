@@ -54,7 +54,7 @@ export function SalesHistoryPage() {
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement('a'); link.href = url; link.download = 'sales-history.csv';
       document.body.append(link); link.click(); link.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 60000);
-    } catch (failure) { setError(failure instanceof Error ? failure.message : 'Не удалось выгрузить продажи.'); }
+    } catch (failure) { setError(failure instanceof TypeError ? 'Сервер недоступен. Повторите экспорт.' : failure instanceof Error ? failure.message : 'Не удалось выгрузить продажи.'); }
     finally { setExporting(false); }
   }
   return <div className="space-y-6">

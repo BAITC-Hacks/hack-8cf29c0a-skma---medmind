@@ -9,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app import models as m
 from app.db import Base, get_db
 from app.main import app
+from app.services.calc_runs import create_run
 
 
 @pytest.fixture
@@ -57,6 +58,15 @@ def test_catalog_saves_product_and_stock_atomically(workspace):
     assert client.post("/api/products", json=product("002")).status_code == 201
     assert client.delete("/api/input-data/products/002").status_code == 200
     assert client.get("/api/products", params={"category_id": "missing"}).json()["total"] == 0
+    assert client.get("/api/products", params={"search": "кабель"}).json()["total"] == 1
+    client.post("/api/products", json=product("003"))
+    with factory() as db:
+        db.add_all([m.StockMonthly(sku_code="003", month=date(2026, month, 1), qty=qty)
+                    for month, qty in [(8, 100), (9, 5)]])
+        db.commit()
+    ordered = client.get("/api/products", params={"sort": "stock"}).json()["items"]
+    assert ordered[0]["code"] == "003"
+    assert ordered[0]["monthly_stock"] == {"as_of": "2026-09-01", "on_hand": 5}
 
 
 def test_sales_summary_paging_filters_and_complete_export(workspace):
@@ -80,6 +90,7 @@ def test_sales_summary_paging_filters_and_complete_export(workspace):
     returns = client.get("/api/sales", params={"kind": "return", "supplier_id": "s"}).json()
     assert returns["total"] == 1 and returns["counts"]["all"] == 4
     assert client.get("/api/sales", params={"search": "002"}).json()["total"] == 1
+    assert client.get("/api/sales", params={"search": "кабель"}).json()["total"] == 4
     assert client.get("/api/sales", params={"search": "%"}).json()["total"] == 0
     assert client.get("/api/sales", params={"from": "2026-09-24", "to": "2026-09-22"}).status_code == 422
     exported = client.get("/api/sales/export", params={"to": "2026-09-22"})
@@ -123,3 +134,20 @@ def test_dashboard_uses_selected_run_and_category_without_fake_forecasts(workspa
     assert client.get("/api/analytics/dashboard", params={"run_id": "r1"}).json()["summary"]["orders"] == 0
     with factory() as db:
         assert db.scalar(select(m.OrderRecommendation.id).where(m.OrderRecommendation.run_id == "r2")) == "r2"
+
+
+def test_active_calculation_blocks_conflicting_writes_and_duplicate_start(workspace):
+    client, factory = workspace
+    client.post("/api/products", json=product())
+    client.post("/api/input-data/supplier-rules", json={"sku_code": "001", "supplier_id": "s"})
+    rule_id = client.get("/api/settings/supplier-rules").json()[0]["id"]
+    with factory() as db:
+        run = create_run(db)
+        assert run.status == "running"
+        assert db.get(m.CalcParams, 1).forecast_horizon_days == 30
+    assert client.post("/api/calc-runs", json={}).status_code == 409
+    assert client.post("/api/products", json=product("002")).status_code == 409
+    assert client.put("/api/suppliers/s", json={"lead_time_days": 2}).status_code == 409
+    assert client.put(f"/api/settings/supplier-rules/{rule_id}", json={"min_order_qty": 3}).status_code == 409
+    with factory() as db:
+        assert len(db.scalars(select(m.CalcRun)).all()) == 1
