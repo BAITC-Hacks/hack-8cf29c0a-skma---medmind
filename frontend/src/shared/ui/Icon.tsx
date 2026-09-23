@@ -1,6 +1,7 @@
 import type { SVGProps } from 'react';
 
 const paths = {
+  menu: 'M4 6h16 M4 12h16 M4 18h16',
   history: 'M3 11a9 9 0 1 1 2.6 7 M3 4v7h7 M12 7v5l4 2',
   orders: 'M8 3h8v4H8z M6 5H4v16h16V5h-2 M8 11h8 M8 15h5',
   dashboard: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
@@ -21,6 +22,12 @@ const paths = {
     'M2 5h12v12H2V5Z M14 9h4l4 4v4h-8 M8 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0 M20 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0',
   sort: 'm7 4-3 3 M7 4v16 m10 0 3-3 M17 20V4',
   info: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0 M12 11v6 M12 7v.1',
+  chat: 'M4 5h16v11H10l-6 4V5Z M8 9h8 M8 12h5',
+  attach: 'm20 11.5-8.2 8.2a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4L15 7',
+  send: 'M4 12 20 4l-5 16-3.5-6.5L4 12Z M11.5 13.5 20 4',
+  plus: 'M12 5v14 M5 12h14',
+  trash: 'M4 7h16 M9 7V4h6v3 M6 7l1 13h10l1-13 M10 11v5 M14 11v5',
+  file: 'M6 3h8l4 4v14H6V3Z M14 3v4h4 M9 13h6 M9 17h6',
 } as const;
 
 export type IconName = keyof typeof paths;

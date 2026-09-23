@@ -73,6 +73,9 @@ def ingest(db: Session, data_dir: Path) -> dict:
     """Полная перезаливка данных поставщиков. Возвращает статистику по загруженным строкам."""
     bundles = load_bundles(data_dir)
 
+    # Full replacement invalidates IDs of previously imported sales/transit rows.
+    db.execute(delete(models.ImportIdentity))
+
     for model in _DATA_TABLES:
         db.execute(delete(model))
 

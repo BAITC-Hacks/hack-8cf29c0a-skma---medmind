@@ -1,0 +1,39 @@
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    init: true
+    environment:
+      DATABASE_URL: sqlite:////app/var/hackalem.db
+      EXPORT_DIR: /app/var/exports
+      DATA_DIR: /app/var/imports
+      SEED_ON_START: ${SEED_ON_START:-true}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL_FAST: ${OPENAI_MODEL_FAST:-gpt-6-luna}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-6-sol}
+      OPENAI_MODEL_DEEP: ${OPENAI_MODEL_DEEP:-gpt-6-astra}
+    volumes:
+      - app-data:/app/var
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5)"]
+      interval: 10s
+      timeout: 6s
+      start_period: 120s
+      retries: 5
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  app-data:

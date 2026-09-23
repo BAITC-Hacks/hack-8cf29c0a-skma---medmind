@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 Urgency = Literal["high", "medium", "low"]
 RecStatus = Literal["pending", "approved", "rejected"]
@@ -32,6 +32,38 @@ class OrderRecommendation(_Out):
     # сверх контракта
     days_of_cover: float | None = None
     comment: str | None = None
+    has_explanation: bool = True
+
+
+class OrderFields(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    recommended_qty: float = Field(gt=0, le=1_000_000, allow_inf_nan=False)
+    urgency: Urgency
+    short_reason: str = Field(min_length=1, max_length=2000)
+    comment: str | None = Field(default=None, max_length=500)
+
+
+class OrderCreate(OrderFields):
+    run_id: str | None = Field(default=None, min_length=1, max_length=64)
+    sku_code: str = Field(min_length=1, max_length=64)
+
+
+class OrderPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    recommended_qty: float | None = Field(default=None, gt=0, le=1_000_000, allow_inf_nan=False)
+    urgency: Urgency | None = None
+    short_reason: str | None = Field(default=None, min_length=1, max_length=2000)
+    comment: str | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def nonempty(self):
+        if not self.model_fields_set:
+            raise ValueError("Передайте хотя бы одно поле для изменения")
+        if any(getattr(self, key) is None for key in self.model_fields_set - {"comment"}):
+            raise ValueError("Обязательные поля нельзя очистить")
+        return self
 
 
 class BulkOutlier(BaseModel):
@@ -59,12 +91,14 @@ class ExplanationDetail(BaseModel):
 
 
 class ApproveRequest(BaseModel):
-    approved_qty: float = Field(ge=0)
-    comment: str | None = None
+    model_config = ConfigDict(extra="forbid")
+    approved_qty: float = Field(gt=0, le=1_000_000, allow_inf_nan=False)
+    comment: str | None = Field(default=None, max_length=500)
 
 
 class RejectRequest(BaseModel):
-    comment: str | None = None
+    model_config = ConfigDict(extra="forbid")
+    comment: str | None = Field(default=None, max_length=500)
 
 
 class ExportRequest(BaseModel):

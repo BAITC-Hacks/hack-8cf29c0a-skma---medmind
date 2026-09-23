@@ -222,7 +222,7 @@ export function OrdersTable({
                           <>
                             <input
                               aria-label={`Количество ${order.sku_code}`}
-                              inputMode="numeric"
+                              inputMode="decimal"
                               autoComplete="off"
                               value={draft(order)}
                               onChange={(event) => onDraft(order.id, event.target.value)}
@@ -237,7 +237,7 @@ export function OrdersTable({
                                 id={`invalid-${order.id}`}
                                 className="mt-1 block max-w-24 text-[10px] text-text-secondary"
                               >
-                                Целое число 1–1 000 000
+                                Больше 0, до 1 000 000
                               </span>
                             )}
                           </>

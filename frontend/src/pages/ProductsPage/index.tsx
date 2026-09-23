@@ -1,99 +1,63 @@
 import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { request, jsonRequest } from '../../shared/api/client';
+import { getOrderLookups } from '../../shared/api/orders';
 import { Button } from '../../shared/ui/Button';
 import { Dialog } from '../../shared/ui/Dialog';
 import { Select } from '../../shared/ui/Select';
+import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
 import { ProductEditor } from './ProductEditor';
-import { readProducts, storageKey, type Product } from './model';
+import type { Product, ProductWrite } from './model';
 
-const format = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 3 });
-const money = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'KZT', maximumFractionDigits: 2 });
+const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 3 });
+const money = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'KZT' });
 type Action = { type: 'create' } | { type: 'edit' | 'view' | 'delete'; product: Product } | null;
 
 export function ProductsPage() {
-  const [catalog, setCatalog] = useState(readProducts);
+  const cache = useQueryClient();
   const [action, setAction] = useState<Action>(null);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [sort, setSort] = useState('name');
+  const [page, setPage] = useState(0);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const categories = [...new Set(catalog.products.map(p => p.category))].sort();
-  const query = search.trim().toLocaleLowerCase('ru-RU');
-  const visible = catalog.products.filter(p => (!category || p.category === category)
-    && `${p.sku} ${p.name} ${p.supplier}`.toLocaleLowerCase('ru-RU').includes(query))
-    .sort((a, b) => sort === 'stock' ? a.stock - b.stock : sort === 'price' ? a.price - b.price : a.name.localeCompare(b.name, 'ru'));
-
-  function persist(next: Product[], success: string): string | null {
-    try {
-      if (catalog.error) throw new Error('Не удалось загрузить каталог. Повторите загрузку перед изменением.');
-      if (localStorage.getItem(storageKey) !== catalog.raw) throw new Error('Каталог изменился в другой вкладке. Закройте форму и нажмите «Обновить каталог», затем повторите изменение.');
-      const raw = JSON.stringify(next);
-      localStorage.setItem(storageKey, raw);
-      setCatalog({ products: next, raw, error: '' });
-      setAction(null);
-      setError('');
-      setMessage(success);
-      return null;
-    } catch (failure) {
-      const text = failure instanceof Error && failure.message.includes('Каталог') ? failure.message : 'Не удалось сохранить изменения. Проверьте доступ и свободное место в хранилище браузера.';
-      setError(text);
-      return text;
-    }
+  const [busy, setBusy] = useState(false);
+  const lookups = useQuery({ queryKey: ['order-lookups'], queryFn: getOrderLookups });
+  const query = useQuery({ queryKey: ['products', search, category, sort, page], queryFn: () => request<{ items: Product[]; total: number }>(`/products?${new URLSearchParams({ search, ...(category ? { category_id: category } : {}), sort, limit: '25', offset: String(page * 25) })}`) });
+  async function refresh() { await Promise.all(['products', 'order-products', 'orders', 'dashboard', 'settings', 'order-lookups'].map(key => cache.invalidateQueries({ queryKey: [key] }))); }
+  async function save(body: ProductWrite) {
+    await request(action?.type === 'edit' ? `/products/${encodeURIComponent(action.product.code)}` : '/products', jsonRequest(action?.type === 'edit' ? 'PUT' : 'POST', body));
+    setAction(null); setMessage('Товар сохранён.'); await refresh();
   }
-  function reload() {
-    setCatalog(readProducts());
-    setCategory('');
-    setError('');
-    setMessage('');
-  }
-  function save(product: Product) {
-    const exists = catalog.products.some(p => p.id === product.id);
-    return persist(exists ? catalog.products.map(p => p.id === product.id ? product : p) : [...catalog.products, product], exists ? 'Изменения товара сохранены.' : 'Товар создан.');
+  async function remove(product: Product) {
+    setBusy(true); setError('');
+    try { await request(`/input-data/products/${encodeURIComponent(product.code)}`, { method: 'DELETE' }); setAction(null); setMessage('Товар удалён.'); setPage(0); await refresh(); }
+    catch (failure) { setError(failure instanceof Error ? failure.message : 'Не удалось удалить товар.'); }
+    finally { setBusy(false); }
   }
   function open(next: Action) { setError(''); setMessage(''); setAction(next); }
-
-  return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div><h1 className="text-3xl font-semibold tracking-tight">Товары</h1><p className="mt-2 text-sm text-text-secondary">Каталог товаров · {catalog.products.length} позиций</p></div>
-        <Button onClick={() => open({ type: 'create' })} disabled={Boolean(catalog.error)}>Добавить товар</Button>
-      </header>
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 text-sm text-text-secondary">
-        <p>Локальный каталог с тестовыми товарами. Изменения сохраняются в этом браузере; заказы и аналитика используют свои данные.</p>
-        <Button variant="ghost" onClick={reload}>Обновить каталог</Button>
-      </div>
-      {message && <p role="status" className="rounded-2xl border border-border bg-surface p-4 text-sm">{message}</p>}
-      {(catalog.error || error) && <p role="alert" className="rounded-2xl border border-status-critical bg-surface p-4 text-sm">{catalog.error || error}</p>}
-      <section aria-label="Каталог товаров" className="overflow-hidden rounded-3xl border border-border bg-surface">
-        <div className="flex flex-wrap items-center gap-3 border-b border-border p-5">
-          <input aria-label="Поиск товаров" placeholder="Название, артикул или поставщик" value={search} onChange={e => setSearch(e.target.value)} className="min-h-11 min-w-0 flex-1 rounded-2xl border border-border bg-surface px-4 py-2 text-sm text-text-primary hover:border-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-focus-ring" />
-          <Select aria-label="Категория товаров" value={category} onChange={setCategory} options={[{ value: '', label: 'Все категории' }, ...[...new Set([...categories, ...(category ? [category] : [])])].map(value => ({ value, label: value }))]} />
-          <Select aria-label="Сортировка товаров" value={sort} onChange={setSort} options={[{ value: 'name', label: 'По названию' }, { value: 'stock', label: 'По остатку ↑' }, { value: 'price', label: 'По цене ↑' }]} />
-          <p className="w-full text-xs text-text-secondary">Показано {visible.length} из {catalog.products.length}</p>
-        </div>
-        {visible.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm">
-          <caption className="sr-only">Товары: артикулы, категории, поставщики, остатки и цены</caption>
-          <thead className="bg-page-bg text-text-secondary"><tr>{['Товар', 'Категория / поставщик', 'Остаток', 'Цена за ед.', 'Действия'].map(label => <th key={label} scope="col" className="whitespace-nowrap px-5 py-4 font-medium">{label}</th>)}</tr></thead>
-          <tbody className="divide-y divide-border">{visible.map(product => <tr key={product.id}>
-            <td className="min-w-48 px-5 py-4"><button onClick={() => open({ type: 'view', product })} className="rounded text-left font-semibold text-accent-text hover:underline active:text-accent-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-focus-ring">{product.name}</button><p className="mt-1 text-xs text-text-secondary">{product.sku}</p></td>
-            <td className="px-5 py-4"><p>{product.category}</p><p className="mt-1 text-xs text-text-secondary">{product.supplier}</p></td>
-            <td className="whitespace-nowrap px-5 py-4 tabular-nums">{format.format(product.stock)} {product.unit}</td>
-            <td className="whitespace-nowrap px-5 py-4 tabular-nums">{money.format(product.price)}</td>
-            <td className="px-5 py-4"><div className="flex gap-2"><Button variant="secondary" aria-label={`Изменить ${product.sku}`} onClick={() => open({ type: 'edit', product })}>Изменить</Button><Button variant="destructive" aria-label={`Удалить ${product.sku}`} onClick={() => open({ type: 'delete', product })}>Удалить</Button></div></td>
-          </tr>)}</tbody>
-        </table></div> : <div className="p-10 text-center"><h2 className="text-lg font-semibold">{catalog.error ? 'Каталог недоступен' : catalog.products.length ? 'Товары не найдены' : 'В каталоге пока нет товаров'}</h2><p className="mt-2 text-sm text-text-secondary">{catalog.products.length ? 'Измените запрос или сбросьте фильтры.' : 'Добавьте первый товар, чтобы начать работу.'}</p>{(search || category) && <Button variant="secondary" className="mt-4" onClick={() => { setSearch(''); setCategory(''); }}>Сбросить фильтры</Button>}</div>}
-      </section>
-      {(action?.type === 'create' || action?.type === 'edit') && <ProductEditor product={action.type === 'edit' ? action.product : null} products={catalog.products} onSave={save} onClose={() => setAction(null)} />}
-      {action?.type === 'view' && <Dialog onClose={() => setAction(null)} labelledBy="product-view-title">
-        <h2 id="product-view-title" className="break-words text-xl font-semibold">{action.product.name}</h2>
-        <dl className="my-6 space-y-4">{[['Артикул', action.product.sku], ['Категория', action.product.category], ['Поставщик', action.product.supplier], ['Остаток', `${format.format(action.product.stock)} ${action.product.unit}`], ['Цена за единицу', money.format(action.product.price)]].map(([label, value]) => <div key={label}><dt className="text-xs text-text-secondary">{label}</dt><dd className="mt-1 break-words text-sm">{value}</dd></div>)}</dl>
-        <div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => setAction(null)}>Закрыть</Button><Button onClick={() => open({ type: 'edit', product: action.product })}>Редактировать</Button></div>
-      </Dialog>}
-      {action?.type === 'delete' && <Dialog onClose={() => setAction(null)} labelledBy="product-delete-title">
-        <h2 id="product-delete-title" className="text-xl font-semibold">Удалить товар?</h2><p className="mt-4 break-words text-sm text-text-secondary">«{action.product.name}» ({action.product.sku}) будет удалён из локального каталога. Это действие нельзя отменить.</p>
-        {error && <p role="alert" className="mt-4 text-sm">{error}</p>}
-        <div className="mt-6 flex flex-wrap justify-end gap-2"><Button autoFocus variant="secondary" onClick={() => setAction(null)}>Отмена</Button><Button variant="destructive" onClick={() => persist(catalog.products.filter(p => p.id !== action.product.id), 'Товар удалён.')}>Удалить товар</Button></div>
-      </Dialog>}
-    </div>
-  );
+  const items = query.data?.items ?? [];
+  const total = query.data?.total ?? 0;
+  return <div className="space-y-6">
+    <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-3xl font-semibold">Товары</h1><p className="mt-2 text-sm text-text-secondary">Каталог и складские остатки</p></div><div className="flex gap-2"><Button variant="secondary" onClick={() => void refresh()}>Обновить</Button><Button onClick={() => open({ type: 'create' })} disabled={!lookups.data}>Добавить товар</Button></div></header>
+    {message && <p role="status" className="rounded-2xl border border-border bg-surface p-4">{message}</p>}
+    {lookups.isError && <QueryError error={lookups.error} retry={lookups.refetch} />}
+    <section className="overflow-hidden rounded-3xl border border-border bg-surface">
+      <div className="flex flex-wrap gap-3 border-b border-border p-5"><input aria-label="Поиск товаров" placeholder="Название, код или поставщик" value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} className="min-h-11 min-w-0 flex-1 rounded-2xl border border-border bg-surface px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-focus-ring" /><Select aria-label="Категория товаров" value={category} onChange={v => { setCategory(v); setPage(0); }} options={[{ value: '', label: 'Все категории' }, ...(lookups.data?.categories ?? []).map(c => ({ value: c.id, label: c.name }))]} /><Select aria-label="Сортировка товаров" value={sort} onChange={v => { setSort(v); setPage(0); }} options={[{ value: 'name', label: 'По названию' }, { value: 'stock', label: 'По остатку ↑' }, { value: 'price', label: 'По себестоимости ↑' }]} /></div>
+      {query.isPending ? <QueryLoading /> : query.isError ? <QueryError error={query.error} retry={query.refetch} /> : <>
+        {items.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">Каталог товаров</caption><thead className="bg-page-bg text-text-secondary"><tr>{['Товар', 'Категория / поставщик', 'Остаток / свободно', 'Себестоимость', 'Действия'].map(label => <th key={label} className="px-5 py-4 font-medium">{label}</th>)}</tr></thead><tbody className="divide-y divide-border">{items.map(product => <tr key={product.code}>
+          <td className="min-w-56 px-5 py-4"><button onClick={() => open({ type: 'view', product })} className="rounded text-left font-semibold text-accent-text hover:underline active:text-accent-active focus-visible:ring-2 focus-visible:ring-accent-focus-ring">{product.name}</button><p className="mt-1 text-xs text-text-secondary">{product.code} · {product.supplier_sku || '—'}</p></td>
+          <td className="px-5 py-4">{product.category_name}<p className="mt-1 text-xs text-text-secondary">{product.supplier_name}</p></td>
+          <td className="whitespace-nowrap px-5 py-4 tabular-nums">{product.stock ? <>{number.format(product.stock.on_hand)} / {number.format(product.stock.free)} {product.unit}<p className="mt-1 text-xs text-text-secondary">на {product.stock.as_of}</p></> : product.monthly_stock ? <>{number.format(product.monthly_stock.on_hand)} {product.unit}<p className="mt-1 text-xs text-text-secondary">на {product.monthly_stock.as_of} · резерв неизвестен</p></> : 'Нет сведений'}</td>
+          <td className="whitespace-nowrap px-5 py-4">{product.unit_cost === null ? '—' : money.format(product.unit_cost)}</td>
+          <td className="px-5 py-4"><div className="flex gap-2"><Button variant="secondary" disabled={!lookups.data} onClick={() => open({ type: 'edit', product })}>Изменить</Button><Button variant="destructive" onClick={() => open({ type: 'delete', product })}>Удалить</Button></div></td>
+        </tr>)}</tbody></table></div> : <p className="p-10 text-center text-text-secondary">Товары не найдены. Добавьте товар или измените фильтры.</p>}
+        <div className="flex items-center justify-between gap-3 border-t border-border p-4"><span className="text-sm text-text-secondary">{total ? `${page * 25 + 1}–${Math.min((page + 1) * 25, total)} из ${total}` : '0 товаров'}</span><div className="flex gap-2"><Button variant="ghost" disabled={!page} onClick={() => setPage(page - 1)}>Назад</Button><Button variant="ghost" disabled={(page + 1) * 25 >= total} onClick={() => setPage(page + 1)}>Далее</Button></div></div>
+      </>}
+    </section>
+    {(action?.type === 'create' || action?.type === 'edit') && lookups.data && <ProductEditor product={action.type === 'edit' ? action.product : null} {...lookups.data} onSave={save} onClose={() => setAction(null)} />}
+    {action?.type === 'view' && <Dialog onClose={() => setAction(null)} labelledBy="product-view"><h2 id="product-view" className="text-xl font-semibold">{action.product.name}</h2><dl className="my-5 space-y-3">{[['Код 1С', action.product.code], ['Артикул', action.product.supplier_sku ?? '—'], ['Поставщик', action.product.supplier_name], ['Категория', action.product.category_name], ['Единица', action.product.unit], ['В резерве', action.product.stock ? number.format(action.product.stock.reserved) : 'Нет сведений']].map(([k, v]) => <div key={k}><dt className="text-xs text-text-secondary">{k}</dt><dd>{v}</dd></div>)}</dl><Button onClick={() => setAction(null)}>Закрыть</Button></Dialog>}
+    {action?.type === 'delete' && <Dialog onClose={() => { if (!busy) setAction(null); }} labelledBy="product-delete"><h2 id="product-delete" className="text-xl font-semibold">Удалить товар?</h2><p className="mt-4 text-sm">{action.product.name} ({action.product.code}). Товары с историей продаж, остатками или заказами удалить нельзя.</p>{error && <p role="alert" className="mt-4 text-sm">{error}</p>}<div className="mt-6 flex justify-end gap-2"><Button disabled={busy} variant="secondary" onClick={() => setAction(null)}>Отмена</Button><Button disabled={busy} variant="destructive" onClick={() => void remove(action.product)}>{busy ? 'Удаляем…' : 'Удалить'}</Button></div></Dialog>}
+  </div>;
 }

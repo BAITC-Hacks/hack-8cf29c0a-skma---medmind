@@ -75,9 +75,9 @@ export function sortOrders(
 }
 
 export function parseQuantity(value: string): number | null {
-  if (!/^\d+$/.test(value.trim())) return null;
-  const quantity = Number(value);
-  return Number.isSafeInteger(quantity) && quantity > 0 && quantity <= 1_000_000 ? quantity : null;
+  if (!/^\d+([.,]\d+)?$/.test(value.trim())) return null;
+  const quantity = Number(value.trim().replace(',', '.'));
+  return Number.isFinite(quantity) && quantity > 0 && quantity <= 1_000_000 ? quantity : null;
 }
 
 export function ordersToCsv(orders: OrderRecommendation[], categoryNames: Record<string, string>) {

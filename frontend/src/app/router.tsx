@@ -5,6 +5,7 @@ import { DashboardPage } from '../pages/DashboardPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { ProductsPage } from '../pages/ProductsPage';
 import { SalesHistoryPage } from '../pages/SalesHistoryPage';
+import { AssistantPage } from '../pages/AssistantPage';
 
 export const router = createBrowserRouter([
   {
@@ -16,6 +17,7 @@ export const router = createBrowserRouter([
       { path: 'products', element: <ProductsPage /> },
       { path: 'sales', element: <SalesHistoryPage /> },
       { path: 'dashboard', element: <DashboardPage /> },
+      { path: 'assistant', element: <AssistantPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
   },

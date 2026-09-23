@@ -1,0 +1,81 @@
+{
+  "format_version": 1,
+  "dataset": "demo-33717910ccf6f327",
+  "excluded_tables": [
+    "sku_forecasts"
+  ],
+  "tables": {
+    "suppliers": {
+      "rows": 2,
+      "sha256": "3c649afad6db455c1ff98a3a396939603ed696b7eea461ac490b956acb688497"
+    },
+    "categories": {
+      "rows": 6,
+      "sha256": "376070b37d32ac5ea715914c92d95be527b4c848eb668aca63b0a0f4dcd4d04c"
+    },
+    "skus": {
+      "rows": 3905,
+      "sha256": "fd4b66545ad5359d91f669febb47a4b18de903a7f79a1eea3f4acc84e0bb6668"
+    },
+    "sales_lines": {
+      "rows": 248915,
+      "sha256": "7fbe575732ea8dc123ddb5056ecd4d692cf82d83b408ea740fb3cedd1e6d710c"
+    },
+    "stock_monthly": {
+      "rows": 117282,
+      "sha256": "4ddfc42f1f207096bf1bc570458770e5262673c3a66590d935884c9b8e09924a"
+    },
+    "stock_current": {
+      "rows": 497,
+      "sha256": "d21820a12502d18f9927e8541d6baa8d6c6068d20c616e63894998f9257f47ae"
+    },
+    "goods_in_transit": {
+      "rows": 313,
+      "sha256": "d6aa44a7c1efd49b6d10631aacfc4d1b97d6bc9ec36627202b0f73cceba70274"
+    },
+    "supplier_rules": {
+      "rows": 2491,
+      "sha256": "723fb7afa2599b5454cb4019eaa57ae3126886626fe6e82f281ed30e1a835f45"
+    },
+    "supplier_seasonality": {
+      "rows": 66,
+      "sha256": "153f92f30d3b9ba6e1a8e11ad4963aad6e42604a4462cda13eac2e00df363ad9"
+    },
+    "reference_metrics": {
+      "rows": 497,
+      "sha256": "4268482542e6dc987fe9e8490fe36dcf310cd43e9dd9a2b227fc432fb6ea88a6"
+    },
+    "calc_params": {
+      "rows": 1,
+      "sha256": "8ed827b5fddb9596358a2198d188709b07a60fb11eb888c0eba05dfd676e0132"
+    },
+    "calc_runs": {
+      "rows": 6,
+      "sha256": "f3aabff20560796b8021c75fb04ffd4efa061e2fa01853e36d987f3ac122ed59"
+    },
+    "order_recommendations": {
+      "rows": 4899,
+      "sha256": "1cc796609c8313152c44e6fef1e32db7a8163375e834f32efe1282038fba8e85"
+    },
+    "audit_log": {
+      "rows": 1,
+      "sha256": "ab8b3c75e10d1c599b1108d9ce772a1a3861003e2c8508b2272b143e899295f5"
+    },
+    "import_identities": {
+      "rows": 0,
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "assistant_conversations": {
+      "rows": 1,
+      "sha256": "3f7a6d42f6d7943042c5ab3bfb5a2dec636db34132c73215cff2beebf21e304c"
+    },
+    "assistant_files": {
+      "rows": 0,
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "assistant_messages": {
+      "rows": 2,
+      "sha256": "faf5fcafce3a7d69a029f4769418ddadb343adad5364dad6fde3804ea1d0ce05"
+    }
+  }
+}

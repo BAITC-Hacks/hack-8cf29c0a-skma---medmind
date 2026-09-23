@@ -1,27 +1,43 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { OrderRecommendation } from '../../shared/api/types';
-import { getExplanation } from '../../shared/api/orders';
-import { USE_MOCK } from '../../shared/api/client';
+import { getExplanation, getOrder } from '../../shared/api/orders';
 import { Button } from '../../shared/ui/Button';
 import { Dialog } from '../../shared/ui/Dialog';
 import { Icon } from '../../shared/ui/Icon';
 import { OrderBadge } from '../../features/orders/OrderBadge';
 import { inputClass, number, parseQuantity } from '../../features/orders/model';
 
-export function OrderDetailDrawer({
+export function OrderDetailDrawer(props: Parameters<typeof OrderDetailContent>[0]) {
+  const query = useQuery({ queryKey: ['order', props.order.id], queryFn: () => getOrder(props.order.run_id, props.order.id), retry: 1 });
+  if (!query.data) return <Dialog drawer labelledBy="detail-loading" onClose={props.onClose}>
+    <div className="space-y-4 p-6">
+      <h2 id="detail-loading" className="text-xl font-semibold">Заказ</h2>
+      <p role={query.isError ? 'alert' : 'status'}>{query.isError ? query.error.message : 'Загрузка заказа…'}</p>
+      {query.isError && <Button onClick={() => void query.refetch()}>Повторить</Button>}
+      <Button variant="secondary" onClick={props.onClose}>Закрыть</Button>
+    </div>
+  </Dialog>;
+  return <OrderDetailContent {...props} order={query.data} />;
+}
+
+function OrderDetailContent({
   order,
   initialQuantity,
   busy,
   error,
   onClose,
   onDecide,
+  onEdit,
+  onDelete,
 }: {
   order: OrderRecommendation;
   initialQuantity: string;
   busy: boolean;
   error?: string;
   onClose: () => void;
+  onEdit: (order: OrderRecommendation) => void;
+  onDelete: (order: OrderRecommendation) => void;
   onDecide: (
     order: OrderRecommendation,
     quantity: number,
@@ -36,6 +52,7 @@ export function OrderDetailDrawer({
     queryKey: ['explanation', order.run_id, order.sku_code],
     queryFn: () => getExplanation(order.run_id, order.sku_code),
     retry: 1,
+    enabled: order.has_explanation !== false,
   });
   const parsed = parseQuantity(quantity);
   const submit = (status: 'approved' | 'rejected') => {
@@ -81,7 +98,12 @@ export function OrderDetailDrawer({
             <OrderBadge status={order.status} />
           </div>
         </div>
-        {isPending ? (
+        <p className="rounded-2xl bg-page-bg p-4 text-sm leading-6">{order.short_reason}</p>
+        <div className="flex flex-wrap gap-3">
+          <Button variant="secondary" disabled={busy} onClick={() => onEdit(order)}>Редактировать</Button>
+          <Button variant="destructive" disabled={busy} onClick={() => onDelete(order)}><Icon name="trash" />Удалить</Button>
+        </div>
+        {order.has_explanation === false ? <p className="text-sm text-text-secondary">Для этой позиции нет сохранённого прогноза. Количество и обоснование можно задать вручную.</p> : isPending ? (
           <div role="status" className="space-y-3">
             <span className="sr-only">Загрузка обоснования</span>
             {[1, 2, 3].map((i) => (
@@ -101,9 +123,10 @@ export function OrderDetailDrawer({
               <section className="rounded-2xl bg-page-bg p-5">
                 <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
                   <Icon name="spark" className="text-accent-text" />
-                  Почему именно столько
+                  Исходный прогноз
                 </div>
                 <p className="text-sm leading-6 text-text-secondary">{data.narrative}</p>
+                {data.final_qty !== order.recommended_qty && <p className="mt-3 text-sm text-text-secondary">Исходное количество: {number(data.final_qty)} {order.unit}. Количество заказа изменено вручную.</p>}
               </section>
               <section>
                 <h3 className="mb-4 text-sm font-semibold">Как рассчитана потребность</h3>
@@ -138,7 +161,7 @@ export function OrderDetailDrawer({
                 </dl>
                 <p className="mt-3 rounded-xl bg-page-bg p-3 text-xs leading-5 text-text-secondary">
                   Спрос × сезонность × рост + компенсация + буфер − свободный остаток − товар в пути.
-                  Результат округляется вверх до целого.
+                  Итог учитывает правила округления и минимальной партии товара.
                 </p>
               </section>
               <section>
@@ -227,7 +250,7 @@ export function OrderDetailDrawer({
             id="detail-quantity"
             value={quantity}
             onChange={(event) => setQuantity(event.target.value)}
-            inputMode="numeric"
+            inputMode="decimal"
             autoComplete="off"
             className={`${inputClass} mt-2 w-full tabular-nums`}
             aria-invalid={attempted && parsed === null}
@@ -238,7 +261,7 @@ export function OrderDetailDrawer({
         {attempted && parsed === null && (
           <p id="quantity-error" role="alert" className="flex items-center gap-2 text-xs text-text-secondary">
             <Icon name="warning" className="shrink-0 text-status-critical" />
-            Введите целое число от 1 до 1 000 000.
+            Введите число больше 0 и не больше 1 000 000.
           </p>
         )}
         <label className="block text-sm font-medium" htmlFor="detail-comment">
@@ -262,9 +285,8 @@ export function OrderDetailDrawer({
           <Button
             type="button"
             variant="destructive"
-            disabled={busy || !USE_MOCK}
+            disabled={busy}
             onClick={() => submit('rejected')}
-            title={!USE_MOCK ? 'Доступно в деморежиме' : undefined}
           >
             Отклонить
           </Button>

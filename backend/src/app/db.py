@@ -1,7 +1,9 @@
 from collections.abc import Iterator
 from pathlib import Path
+import sqlite3
 
 from sqlalchemy import create_engine, event
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import get_settings
@@ -9,6 +11,13 @@ from app.config import get_settings
 
 class Base(DeclarativeBase):
     pass
+
+
+@event.listens_for(Engine, "connect")
+def _unicode_search(connection, _):
+    if isinstance(connection, sqlite3.Connection):
+        connection.create_function("lower", 1, lambda value: value.casefold() if value is not None else None,
+                                   deterministic=True)
 
 
 def _make_engine(url: str):

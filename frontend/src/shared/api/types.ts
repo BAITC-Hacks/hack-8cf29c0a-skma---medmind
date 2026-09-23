@@ -25,7 +25,29 @@ export interface OrderRecommendation {
   urgency: Urgency;
   status: OrderStatus;
   short_reason: string;
-  comment?: string;
+  comment?: string | null;
+  has_explanation?: boolean;
+}
+
+export interface OrderFields {
+  recommended_qty: number;
+  urgency: Urgency;
+  short_reason: string;
+  comment: string | null;
+}
+
+export interface OrderCreate extends OrderFields {
+  run_id: string | null;
+  sku_code: string;
+}
+
+export interface OrderProduct {
+  code: string;
+  name: string;
+  supplier_id: string;
+  category_id: string;
+  supplier_sku: string | null;
+  unit: string;
 }
 
 export interface ExplanationDetail {

@@ -1,16 +1,21 @@
 import type { CalcRun } from './types';
-import calcRunsFixture from './fixtures/calc-runs.json';
 
-export const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
-export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api';
+export const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
 
-export async function getCalcRuns(): Promise<CalcRun[]> {
-  if (USE_MOCK) {
-    return calcRunsFixture as CalcRun[];
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  let response: Response;
+  try { response = await fetch(`${API_BASE}${path}`, init); }
+  catch { throw new Error('Сервер недоступен. Проверьте подключение и повторите попытку.'); }
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const detail = body?.detail;
+    const message = typeof detail === 'string' ? detail
+      : detail?.message ?? (Array.isArray(detail) ? detail.map(item => item.msg).join('; ') : '');
+    throw new Error(message || `Не удалось выполнить запрос (${response.status}). Попробуйте ещё раз.`);
   }
-  const res = await fetch(`${API_BASE}/calc-runs`);
-  if (!res.ok) {
-    throw new Error(`Failed to load calc runs: ${res.status}`);
-  }
-  return (await res.json()) as CalcRun[];
+  return response.status === 204 ? undefined as T : response.json() as Promise<T>;
 }
+export function jsonRequest(method: string, body: unknown): RequestInit {
+  return { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
+}
+export const getCalcRuns = () => request<CalcRun[]>('/calc-runs');

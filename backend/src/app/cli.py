@@ -1,4 +1,4 @@
-"""CLI: `uv run hackalem ingest | calc | serve`."""
+"""CLI: `uv run hackalem seed | ingest | calc | serve`."""
 
 import argparse
 import json
@@ -18,6 +18,17 @@ def _ingest(_: argparse.Namespace) -> None:
         stats = ingest(db, settings.data_dir.resolve())
     print(json.dumps(stats, ensure_ascii=False, indent=2))
     print(f"ingest: {time.perf_counter() - t:.1f} c")
+
+
+def _seed(_: argparse.Namespace) -> None:
+    from app.services.seed import seed
+
+    with SessionLocal() as db:
+        try:
+            stats = seed(db)
+        except (ValueError, OSError) as exc:
+            raise SystemExit(str(exc)) from exc
+    print(json.dumps(stats, ensure_ascii=False, indent=2))
 
 
 def _calc(args: argparse.Namespace) -> None:
@@ -47,6 +58,9 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     parser = argparse.ArgumentParser(prog="hackalem")
     sub = parser.add_subparsers(required=True)
+
+    p = sub.add_parser("seed", help="загрузить тестовые данные без прогнозов (повторный запуск безопасен)")
+    p.set_defaults(func=_seed)
 
     p = sub.add_parser("ingest", help="загрузить xlsx из DATA_DIR в БД")
     p.set_defaults(func=_ingest)

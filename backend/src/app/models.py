@@ -7,10 +7,19 @@ audit_log) и настройки (calc_params, suppliers.lead_time_days) пер�
 
 from datetime import date, datetime
 
-from sqlalchemy import JSON, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import JSON, Date, DateTime, Float, ForeignKey, Index, Integer, LargeBinary, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
+
+
+class AssistantCredential(Base):
+    """Server-only credential, excluded from data exports and demo seeds."""
+
+    __tablename__ = "assistant_credentials"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    api_key: Mapped[str] = mapped_column(Text)
 
 
 class Supplier(Base):
@@ -189,3 +198,57 @@ class AuditLog(Base):
     entity: Mapped[str] = mapped_column(String(64))
     entity_id: Mapped[str] = mapped_column(String(64))
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
+class ImportIdentity(Base):
+    """Stable 1C row identity for incremental imports of sales and transit."""
+
+    __tablename__ = "import_identities"
+
+    resource: Mapped[str] = mapped_column(String(32), primary_key=True)
+    source: Mapped[str] = mapped_column(String(100), primary_key=True)
+    external_id: Mapped[str] = mapped_column(String(200), primary_key=True)
+    record_key: Mapped[str] = mapped_column(String(200), index=True)
+
+
+class AssistantConversation(Base):
+    """Диалог «ленивого режима». История хранится у нас, в OpenAI — без сохранения (store=false)."""
+
+    __tablename__ = "assistant_conversations"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    title: Mapped[str] = mapped_column(String(200), default="Новый диалог")
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class AssistantMessage(Base):
+    __tablename__ = "assistant_messages"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("assistant_conversations.id", ondelete="CASCADE"), index=True
+    )
+    role: Mapped[str] = mapped_column(String(16))  # user | assistant
+    content: Mapped[str] = mapped_column(Text)
+    charts: Mapped[list] = mapped_column(JSON, default=list)
+    file_ids: Mapped[list] = mapped_column(JSON, default=list)
+    tool_calls: Mapped[list] = mapped_column(JSON, default=list)  # [{name, arguments}] — для прозрачности
+    model: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class AssistantFile(Base):
+    """Файл пользователя (CSV/XLSX). Разбирается на сервере; в OpenAI уходят только агрегаты."""
+
+    __tablename__ = "assistant_files"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("assistant_conversations.id", ondelete="CASCADE"), index=True
+    )
+    filename: Mapped[str] = mapped_column(String(255))
+    size: Mapped[int] = mapped_column(Integer)
+    content: Mapped[bytes] = mapped_column(LargeBinary)
+    summary: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime)

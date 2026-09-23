@@ -4,7 +4,7 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from app.api import analytics, calc_runs, catalog, recommendations, settings
+from app.api import analytics, assistant, calc_runs, catalog, imports, input_data, recommendations, settings, workspace
 from app.config import get_settings
 from app.db import init_db
 from app.services.exporter import FILENAME_RE
@@ -30,7 +30,7 @@ app.add_middleware(
 )
 
 api = APIRouter(prefix="/api")
-for module in (recommendations, catalog, calc_runs, analytics, settings):
+for module in (recommendations, catalog, calc_runs, analytics, settings, input_data, imports, assistant, workspace):
     api.include_router(module.router)
 
 

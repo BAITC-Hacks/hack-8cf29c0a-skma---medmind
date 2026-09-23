@@ -17,6 +17,12 @@
 
   --chart-series-1: #2686b1;
   --chart-series-2: #eb6834;
+  --chart-series-3: #1baf7a;
+  --chart-series-4: #eda100;
+  --chart-series-5: #e87ba4;
+  --chart-series-6: #008300;
+  --chart-series-7: #4a3aa7;
+  --chart-series-8: #e34948;
   --chart-sequential-500: #1477a0;
 
   --status-good: #0ca30c;
@@ -30,6 +36,12 @@
     color-scheme: dark;
     --chart-series-1: #3995c1;
     --chart-series-2: #d95926;
+    --chart-series-3: #199e70;
+    --chart-series-4: #c98500;
+    --chart-series-5: #d55181;
+    --chart-series-6: #008300;
+    --chart-series-7: #9085e9;
+    --chart-series-8: #e66767;
     --page-bg: #090e11;
     --surface: #151b1f;
     --border: #272f34;
@@ -51,6 +63,12 @@
   color-scheme: dark;
   --chart-series-1: #3995c1;
   --chart-series-2: #d95926;
+  --chart-series-3: #199e70;
+  --chart-series-4: #c98500;
+  --chart-series-5: #d55181;
+  --chart-series-6: #008300;
+  --chart-series-7: #9085e9;
+  --chart-series-8: #e66767;
   --page-bg: #090e11;
   --surface: #151b1f;
   --border: #272f34;

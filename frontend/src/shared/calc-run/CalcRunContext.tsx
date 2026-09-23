@@ -4,7 +4,11 @@ import { getCalcRuns } from '../api/client';
 import { CalcRunContext } from './useCalcRun';
 
 export function CalcRunProvider({ children }: { children: ReactNode }) {
-  const { data, isLoading, isError, refetch } = useQuery({ queryKey: ['calc-runs'], queryFn: getCalcRuns });
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['calc-runs'],
+    queryFn: getCalcRuns,
+    refetchInterval: query => query.state.data?.some(run => run.status === 'running') ? 2000 : false,
+  });
   const runs = data ?? [];
   const [chosenRunId, setSelectedRunId] = useState<string | null>(null);
   const selectedRunId = runs.find((run) => run.id === chosenRunId)?.id ?? runs[0]?.id ?? null;

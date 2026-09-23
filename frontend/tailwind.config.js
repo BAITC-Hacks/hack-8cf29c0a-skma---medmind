@@ -7,6 +7,12 @@ export default {
       colors: {
         'chart-series-1': 'var(--chart-series-1)',
         'chart-series-2': 'var(--chart-series-2)',
+        'chart-series-3': 'var(--chart-series-3)',
+        'chart-series-4': 'var(--chart-series-4)',
+        'chart-series-5': 'var(--chart-series-5)',
+        'chart-series-6': 'var(--chart-series-6)',
+        'chart-series-7': 'var(--chart-series-7)',
+        'chart-series-8': 'var(--chart-series-8)',
         'page-bg': 'var(--page-bg)',
         surface: 'var(--surface)',
         border: 'var(--border)',

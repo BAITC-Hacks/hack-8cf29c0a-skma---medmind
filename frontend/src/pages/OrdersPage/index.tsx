@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCalcRun } from '../../shared/calc-run/useCalcRun';
-import { API_BASE, USE_MOCK } from '../../shared/api/client';
-import { decideOrder, getOrderLookups, getRecommendations } from '../../shared/api/orders';
+import { API_BASE } from '../../shared/api/client';
+import { decideOrder, deleteOrder, getOrderLookups, getRecommendations } from '../../shared/api/orders';
 import type { CalcRun, OrderRecommendation } from '../../shared/api/types';
 import { Button } from '../../shared/ui/Button';
 import { Icon, type IconName } from '../../shared/ui/Icon';
@@ -10,12 +11,12 @@ import { Select } from '../../shared/ui/Select';
 import { Dialog } from '../../shared/ui/Dialog';
 import { MultiSelect } from '../../features/orders/MultiSelect';
 import { OrdersTable } from '../../features/orders/OrdersTable';
+import { OrderEditor } from '../../features/orders/OrderEditor';
 import {
   emptyFilters,
   filterOrders,
   inputClass,
   number,
-  ordersToCsv,
   parseQuantity,
   sortOrders,
   urgencyLabels,
@@ -61,6 +62,20 @@ function LoadingOrders() {
   );
 }
 
+function FirstOrder() {
+  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { setSelectedRunId } = useCalcRun();
+  return <section className="rounded-3xl border border-border bg-surface p-8 text-center">
+    <h1 className="text-2xl font-semibold">Создайте первый заказ</h1>
+    <p className="my-4 text-sm text-text-secondary">Добавьте товар из каталога вручную. Прогноз для этого не требуется.</p>
+    <Button onClick={() => setOpen(true)}><Icon name="plus" />Новый заказ</Button>
+    {open && <OrderEditor runId={null} onClose={() => setOpen(false)} onSaved={order => {
+      setOpen(false); setSelectedRunId(order.run_id); void queryClient.invalidateQueries({ queryKey: ['calc-runs'] });
+    }} />}
+  </section>;
+}
+
 export function OrdersPage() {
   const { runs, selectedRunId, isLoading, isError, retry } = useCalcRun();
   const run = runs.find((item) => item.id === selectedRunId);
@@ -75,7 +90,8 @@ export function OrdersPage() {
         </Button>
       </section>
     );
-  if (!run || run.status !== 'done')
+  if (!run) return <FirstOrder />;
+  if (run.status !== 'done')
     return (
       <section className="rounded-3xl border border-border bg-surface px-6 py-16 text-center">
         <Icon
@@ -112,11 +128,24 @@ function OrdersWorkspace({ run }: { run: CalcRun }) {
   const [pageSize, setPageSize] = useState(10);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const [activeId, setActiveId] = useState<string | null>(() => searchParams.get('order'));
   const [confirm, setConfirm] = useState<Decision[] | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportFile, setExportFile] = useState<{ url: string; name: string; count: number } | null>(null);
   const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null);
+  const [editor, setEditor] = useState<OrderRecommendation | 'create' | null>(null);
+  const [deleting, setDeleting] = useState<OrderRecommendation | null>(null);
+  const refreshOrders = () => {
+    setSelected(new Set()); setDrafts({}); setActiveId(null); setExportFile(null);
+    void queryClient.invalidateQueries({ queryKey });
+    void queryClient.invalidateQueries({ queryKey: ['order'] });
+    void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+  };
+  const removal = useMutation({
+    mutationFn: deleteOrder,
+    onSuccess: () => { setDeleting(null); refreshOrders(); setNotice({ text: 'Заказ удалён.', error: false }); },
+  });
   useEffect(
     () => () => {
       if (exportFile?.url.startsWith('blob:')) URL.revokeObjectURL(exportFile.url);
@@ -156,6 +185,8 @@ function OrdersWorkspace({ run }: { run: CalcRun }) {
         ),
       );
       setConfirm(null);
+      setExportFile(null);
+      void queryClient.invalidateQueries({ queryKey: ['order'] });
       if (!failed.length) setActiveId(null);
       setNotice({
         error: failed.length > 0,
@@ -243,11 +274,7 @@ function OrdersWorkspace({ run }: { run: CalcRun }) {
     setExporting(true);
     try {
       let url: string;
-      if (USE_MOCK)
-        url = URL.createObjectURL(
-          new Blob([ordersToCsv(rows, categoryNames)], { type: 'text/csv;charset=utf-8;' }),
-        );
-      else {
+      {
         const response = await fetch(`${API_BASE}/recommendations/export`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -255,7 +282,7 @@ function OrdersWorkspace({ run }: { run: CalcRun }) {
         });
         if (!response.ok) throw new Error('Не удалось подготовить файл. Повторите экспорт.');
         const data = (await response.json()) as { download_url: string };
-        url = data.download_url;
+        url = new URL(data.download_url, new URL(API_BASE, window.location.origin)).href;
       }
       const name = `orders-${run.id}.csv`;
       setExportFile({ url, name, count: rows.length });
@@ -311,17 +338,15 @@ function OrdersWorkspace({ run }: { run: CalcRun }) {
         <div>
           <div className="mb-3 flex flex-wrap items-center gap-3">
             <p className="text-xs font-medium tracking-widest text-text-secondary">УПРАВЛЕНИЕ ЗАКУПКАМИ</p>
-            {USE_MOCK && (
-              <span className="rounded-full border border-border bg-surface px-2.5 py-1 text-[11px] font-medium text-text-secondary">
-                Демо · тестовые данные
-              </span>
-            )}
+
           </div>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Заказы</h1>
           <p className="mt-3 text-sm leading-6 text-text-secondary">
             Рекомендации к закупке — от расчёта до согласования.
           </p>
         </div>
+        <div className="flex flex-wrap gap-3">
+        <Button onClick={() => setEditor('create')} disabled={mutation.isPending}><Icon name="plus" />Новый заказ</Button>
         <Button
           variant="secondary"
           onClick={() => void exportRows(selectedRows.length ? selectedRows : filtered)}
@@ -334,6 +359,7 @@ function OrdersWorkspace({ run }: { run: CalcRun }) {
               ? `Экспорт выбранных · ${selectedRows.length}`
               : 'Экспорт CSV'}
         </Button>
+        </div>
       </div>
       {exportFile && (
         <p className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-xs text-text-secondary">
@@ -439,7 +465,7 @@ function OrdersWorkspace({ run }: { run: CalcRun }) {
             ) : (
               <span className="flex items-center gap-1.5">
                 <Icon name="info" width="14" height="14" />
-                Нажмите на позицию, чтобы открыть обоснование
+                Нажмите на позицию, чтобы открыть карточку заказа
               </span>
             )}
           </div>
@@ -558,7 +584,6 @@ function OrdersWorkspace({ run }: { run: CalcRun }) {
         <Icon name="info" width="16" height="16" className="mt-0.5 shrink-0" />
         <span>
           Рекомендации требуют вашего подтверждения. Заказы не отправляются поставщикам автоматически.
-          {USE_MOCK && ' Изменения в деморежиме сохраняются до перезагрузки страницы.'}
         </span>
       </p>
       {notice && (
@@ -589,11 +614,32 @@ function OrdersWorkspace({ run }: { run: CalcRun }) {
           busy={mutation.isPending}
           error={notice?.error ? notice.text : undefined}
           onClose={() => setActiveId(null)}
+          onEdit={(order) => { setActiveId(null); setEditor(order); }}
+          onDelete={(order) => { setActiveId(null); removal.reset(); setDeleting(order); }}
           onDecide={(order, quantity, status, comment) =>
             mutation.mutate([{ order, quantity, status, comment }])
           }
         />
       )}
+      {editor && <OrderEditor
+        order={editor === 'create' ? undefined : editor}
+        runId={run.id}
+        onClose={() => setEditor(null)}
+        onSaved={() => {
+          setEditor(null); refreshOrders(); setFilters(emptyFilters); setPage(1);
+          setNotice({ text: editor === 'create' ? 'Заказ создан.' : 'Изменения сохранены.', error: false });
+        }}
+      />}
+      {deleting && <Dialog labelledBy="delete-title" onClose={() => { if (!removal.isPending) setDeleting(null); }}>
+        <h2 id="delete-title" className="text-xl font-semibold">Удалить заказ?</h2>
+        <p className="mt-3 text-sm text-text-secondary">{deleting.name} · {deleting.sku_code}</p>
+        <p className="mt-3 text-sm text-text-secondary">Позиция исчезнет из списка и последующих выгрузок. История действий и исходный прогноз сохранятся.</p>
+        {removal.isError && <p role="alert" className="mt-4 text-sm">{removal.error.message}</p>}
+        <div className="mt-6 flex justify-end gap-3">
+          <Button variant="secondary" disabled={removal.isPending} onClick={() => setDeleting(null)}>Отмена</Button>
+          <Button variant="destructive" disabled={removal.isPending} onClick={() => removal.mutate(deleting)}>{removal.isPending ? 'Удаляем…' : 'Удалить заказ'}</Button>
+        </div>
+      </Dialog>}
       {confirm && (
         <Dialog
           labelledBy="approve-title"

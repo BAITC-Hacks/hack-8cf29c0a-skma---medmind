@@ -68,11 +68,13 @@ test('all four filters and case-insensitive search combine without leaking hidde
   assert.equal(filterOrders(latest.orders, { ...emptyFilters, search: 'nonexistent' }).length, 0);
 });
 
-test('quantity validation rejects zero, negatives, fractions, exponent syntax and unsafe ranges', () => {
-  for (const value of ['', ' ', '0', '-1', '1.5', '1e3', 'NaN', 'Infinity', '1000001', '9007199254740993'])
+test('quantity validation supports decimals and rejects zero, negatives, exponent syntax and unsafe ranges', () => {
+  for (const value of ['', ' ', '0', '-1', '1,2.3', '1e3', 'NaN', 'Infinity', '1000001', '9007199254740993'])
     assert.equal(parseQuantity(value), null, value);
   assert.equal(parseQuantity(' 320 '), 320);
   assert.equal(parseQuantity('1000000'), 1000000);
+  assert.equal(parseQuantity('1.5'), 1.5);
+  assert.equal(parseQuantity('0,25'), 0.25);
 });
 
 test('sorting uses numbers, urgency and edited quantities, preserving the input array', () => {
