@@ -1,0 +1,34 @@
+{
+  "suppliers": [
+    { "id": "iek", "name": "IEK", "lead_time_days": 7 },
+    { "id": "se", "name": "Systeme Electric", "lead_time_days": 10 }
+  ],
+  "categories": [
+    { "id": "protection", "name": "Модульное оборудование" },
+    { "id": "installation", "name": "Электроустановка" },
+    { "id": "lighting", "name": "Освещение" },
+    { "id": "cable", "name": "Кабель и монтаж" }
+  ],
+  "products": [
+    { "sku_code": "00018452", "supplier_sku": "MVA20-1-016-C", "name": "Выключатель автоматический ВА47-29 1P C16", "supplier_id": "iek", "category_id": "protection", "unit": "шт.", "base_demand": 240, "stock": 28, "reserved": 8, "transit": 40, "urgency": "high", "status": "pending" },
+    { "sku_code": "00018453", "supplier_sku": "MVA20-1-025-C", "name": "Выключатель автоматический ВА47-29 1P C25", "supplier_id": "iek", "category_id": "protection", "unit": "шт.", "base_demand": 180, "stock": 32, "reserved": 12, "transit": 20, "urgency": "high", "status": "pending" },
+    { "sku_code": "00020116", "supplier_sku": "MAD22-2-025-C-30", "name": "Дифференциальный автомат АВДТ32 C25 30 мА", "supplier_id": "iek", "category_id": "protection", "unit": "шт.", "base_demand": 80, "stock": 24, "reserved": 4, "transit": 10, "urgency": "medium", "status": "pending" },
+    { "sku_code": "00031042", "supplier_sku": "LLE-A60-10-230-40-E27", "name": "Лампа светодиодная A60 E27 10 Вт 4000 K", "supplier_id": "iek", "category_id": "lighting", "unit": "шт.", "base_demand": 360, "stock": 40, "reserved": 20, "transit": 100, "urgency": "high", "status": "pending" },
+    { "sku_code": "00031058", "supplier_sku": "LPB-36-40-K01", "name": "Панель светодиодная 595 × 595 мм 36 Вт", "supplier_id": "iek", "category_id": "lighting", "unit": "шт.", "base_demand": 60, "stock": 32, "reserved": 2, "transit": 10, "urgency": "low", "status": "approved" },
+    { "sku_code": "00042103", "supplier_sku": "CKK10-025-016-1-K01", "name": "Кабель-канал 25 × 16 мм, белый", "supplier_id": "iek", "category_id": "cable", "unit": "м", "base_demand": 450, "stock": 180, "reserved": 30, "transit": 100, "urgency": "medium", "status": "pending" },
+    { "sku_code": "00042118", "supplier_sku": "CTR10-016-K41-100", "name": "Труба гофрированная ПВХ Ø16 мм с зондом", "supplier_id": "iek", "category_id": "cable", "unit": "м", "base_demand": 600, "stock": 240, "reserved": 40, "transit": 100, "urgency": "medium", "status": "approved" },
+    { "sku_code": "00050231", "supplier_sku": "ERS10-K01-16-DC", "name": "Розетка ОКТАВА с заземлением, белая", "supplier_id": "iek", "category_id": "installation", "unit": "шт.", "base_demand": 120, "stock": 60, "reserved": 10, "transit": 20, "urgency": "low", "status": "pending" },
+    { "sku_code": "00050238", "supplier_sku": "EVS10-K01-10-DC", "name": "Выключатель ОКТАВА одноклавишный, белый", "supplier_id": "iek", "category_id": "installation", "unit": "шт.", "base_demand": 100, "stock": 55, "reserved": 5, "transit": 20, "urgency": "low", "status": "rejected" },
+    { "sku_code": "00042091", "supplier_sku": "YNN10-50-12A-K07", "name": "Шина нулевая N 6 × 9 мм, 12 отверстий", "supplier_id": "iek", "category_id": "cable", "unit": "шт.", "base_demand": 90, "stock": 18, "reserved": 8, "transit": 20, "urgency": "medium", "status": "pending" },
+    { "sku_code": "00060211", "supplier_sku": "EZ9F34116", "name": "Выключатель автоматический Easy9 1P C16", "supplier_id": "se", "category_id": "protection", "unit": "шт.", "base_demand": 200, "stock": 22, "reserved": 12, "transit": 40, "urgency": "high", "status": "pending" },
+    { "sku_code": "00060224", "supplier_sku": "EZ9F34325", "name": "Выключатель автоматический Easy9 3P C25", "supplier_id": "se", "category_id": "protection", "unit": "шт.", "base_demand": 70, "stock": 12, "reserved": 2, "transit": 10, "urgency": "high", "status": "pending" },
+    { "sku_code": "00060304", "supplier_sku": "EZ9R34240", "name": "УЗО Easy9 2P 40 А 30 мА", "supplier_id": "se", "category_id": "protection", "unit": "шт.", "base_demand": 60, "stock": 24, "reserved": 4, "transit": 10, "urgency": "medium", "status": "pending" },
+    { "sku_code": "00071102", "supplier_sku": "ATN000143", "name": "Розетка AtlasDesign с заземлением, белая", "supplier_id": "se", "category_id": "installation", "unit": "шт.", "base_demand": 300, "stock": 40, "reserved": 20, "transit": 50, "urgency": "high", "status": "pending" },
+    { "sku_code": "00071110", "supplier_sku": "ATN000151", "name": "Выключатель AtlasDesign одноклавишный", "supplier_id": "se", "category_id": "installation", "unit": "шт.", "base_demand": 180, "stock": 70, "reserved": 20, "transit": 30, "urgency": "medium", "status": "pending" },
+    { "sku_code": "00071125", "supplier_sku": "ATN000102", "name": "Рамка AtlasDesign двухместная, белая", "supplier_id": "se", "category_id": "installation", "unit": "шт.", "base_demand": 220, "stock": 130, "reserved": 30, "transit": 40, "urgency": "low", "status": "approved" },
+    { "sku_code": "00072104", "supplier_sku": "BLNRS001011", "name": "Розетка Blanca с заземлением, белая", "supplier_id": "se", "category_id": "installation", "unit": "шт.", "base_demand": 160, "stock": 90, "reserved": 10, "transit": 20, "urgency": "low", "status": "pending" },
+    { "sku_code": "00072108", "supplier_sku": "BLNVS001011", "name": "Выключатель Blanca одноклавишный", "supplier_id": "se", "category_id": "installation", "unit": "шт.", "base_demand": 140, "stock": 90, "reserved": 10, "transit": 30, "urgency": "low", "status": "rejected" },
+    { "sku_code": "00060410", "supplier_sku": "EZ9E112S2F", "name": "Щит распределительный Easy9, 12 модулей", "supplier_id": "se", "category_id": "protection", "unit": "шт.", "base_demand": 40, "stock": 14, "reserved": 4, "transit": 10, "urgency": "medium", "status": "pending" },
+    { "sku_code": "00060422", "supplier_sku": "EZ9XPH112", "name": "Шина соединительная Easy9 1P, 12 модулей", "supplier_id": "se", "category_id": "cable", "unit": "шт.", "base_demand": 80, "stock": 46, "reserved": 6, "transit": 10, "urgency": "low", "status": "approved" }
+  ]
+}
