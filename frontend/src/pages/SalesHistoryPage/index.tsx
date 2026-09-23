@@ -7,6 +7,7 @@ import { Select } from '../../shared/ui/Select';
 import { Dialog } from '../../shared/ui/Dialog';
 import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
 import { SalesTrend } from '../../features/sales/SalesTrend';
+import { useDebouncedValue } from '../../shared/useDebouncedValue';
 
 interface Sale {
   id: number; ts: string; document: string; doc_type: string; sku_code: string;
@@ -25,18 +26,19 @@ const initial = { search: '', from: '', to: '', supplier_id: '', category_id: ''
 const dateLabel = (date: string) => date.slice(0, 10).split('-').reverse().join('.');
 export function SalesHistoryPage() {
   const [filters, setFilters] = useState(initial);
+  const settledSearch = useDebouncedValue(filters.search);
   const [sort, setSort] = useState('date');
   const [ascending, setAscending] = useState(false);
   const [page, setPage] = useState(0);
   const [active, setActive] = useState<Sale | null>(null);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
-  const params = new URLSearchParams(Object.entries(filters).filter(([, value]) => Boolean(value)));
+  const params = new URLSearchParams(Object.entries({ ...filters, search: settledSearch }).filter(([, value]) => Boolean(value)));
   params.set('sort', sort); params.set('ascending', String(ascending));
   const invalidDates = Boolean(filters.from && filters.to && filters.from > filters.to);
   const lookups = useQuery({ queryKey: ['order-lookups'], queryFn: getOrderLookups });
   const query = useQuery({ queryKey: ['sales', params.toString(), page], enabled: !invalidDates,
-    queryFn: () => request<SalesData>(`/sales?${params}&limit=25&offset=${page * 25}`) });
+    queryFn: ({ signal }) => request<SalesData>(`/sales?${params}&limit=25&offset=${page * 25}`, { signal }) });
   const change = (values: Partial<typeof initial>) => { setFilters(previous => ({ ...previous, ...values })); setPage(0); };
   const data = invalidDates ? undefined : query.data;
   function preset(days: number | null) {

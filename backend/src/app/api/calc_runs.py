@@ -36,7 +36,7 @@ def start_run(background: BackgroundTasks, body: schemas.CalcRunCreate | None = 
     if db.scalar(select(models.CalcRun.id).where(models.CalcRun.status == "running")):
         raise HTTPException(409, "Расчёт уже выполняется")
     if db.scalar(select(models.Sku.code).limit(1)) is None:
-        raise HTTPException(409, "Нет данных: сначала выполните загрузку (hackalem ingest)")
+        raise HTTPException(409, "В каталоге нет товаров. Загрузите отчёты или добавьте товары перед расчётом.")
     run = create_run(db, horizon_days=body.horizon_days if body else None)
     background.add_task(execute_run, run.id)
     return _to_schema(run)

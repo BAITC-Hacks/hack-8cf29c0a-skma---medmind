@@ -8,6 +8,8 @@ import { Select } from '../../shared/ui/Select';
 import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
 import { ProductEditor } from './ProductEditor';
 import type { Product, ProductWrite } from './model';
+import { SupplierImport } from './SupplierImport';
+import { useDebouncedValue } from '../../shared/useDebouncedValue';
 
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 3 });
 const money = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'KZT' });
@@ -17,6 +19,7 @@ export function ProductsPage() {
   const cache = useQueryClient();
   const [action, setAction] = useState<Action>(null);
   const [search, setSearch] = useState('');
+  const settledSearch = useDebouncedValue(search);
   const [category, setCategory] = useState('');
   const [sort, setSort] = useState('name');
   const [page, setPage] = useState(0);
@@ -24,7 +27,7 @@ export function ProductsPage() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const lookups = useQuery({ queryKey: ['order-lookups'], queryFn: getOrderLookups });
-  const query = useQuery({ queryKey: ['products', search, category, sort, page], queryFn: () => request<{ items: Product[]; total: number }>(`/products?${new URLSearchParams({ search, ...(category ? { category_id: category } : {}), sort, limit: '25', offset: String(page * 25) })}`) });
+  const query = useQuery({ queryKey: ['products', settledSearch, category, sort, page], queryFn: ({ signal }) => request<{ items: Product[]; total: number }>(`/products?${new URLSearchParams({ search: settledSearch, ...(category ? { category_id: category } : {}), sort, limit: '25', offset: String(page * 25) })}`, { signal }) });
   async function refresh() { await Promise.all(['products', 'order-products', 'orders', 'dashboard', 'settings', 'order-lookups'].map(key => cache.invalidateQueries({ queryKey: [key] }))); }
   async function save(body: ProductWrite) {
     await request(action?.type === 'edit' ? `/products/${encodeURIComponent(action.product.code)}` : '/products', jsonRequest(action?.type === 'edit' ? 'PUT' : 'POST', body));
@@ -41,6 +44,7 @@ export function ProductsPage() {
   const total = query.data?.total ?? 0;
   return <div className="space-y-6">
     <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-3xl font-semibold">Товары</h1><p className="mt-2 text-sm text-text-secondary">Каталог и складские остатки</p></div><div className="flex gap-2"><Button variant="secondary" onClick={() => void refresh()}>Обновить</Button><Button onClick={() => open({ type: 'create' })} disabled={!lookups.data}>Добавить товар</Button></div></header>
+    <SupplierImport />
     {message && <p role="status" className="rounded-2xl border border-border bg-surface p-4">{message}</p>}
     {lookups.isError && <QueryError error={lookups.error} retry={lookups.refetch} />}
     <section className="overflow-hidden rounded-3xl border border-border bg-surface">

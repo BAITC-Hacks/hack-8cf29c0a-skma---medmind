@@ -109,7 +109,8 @@ def test_dashboard_uses_selected_run_and_category_without_fake_forecasts(workspa
     assert one["seasonality"] == []
     assert one["trend"] == [{"period": "2026-08", "actual_qty": 10, "forecast_qty": None}]
     assert client.get("/api/analytics/dashboard", params={"run_id": "r2"}).json()["summary"]["high"] == 0
-    assert client.get("/api/analytics/dashboard", params={"run_id": "r1", "category_id": "none"}).json()["summary"]["orders"] == 0
+    empty = client.get("/api/analytics/dashboard", params={"run_id": "r1", "category_id": "none"}).json()
+    assert empty["summary"]["orders"] == 0
     assert client.get("/api/analytics/dashboard", params={"run_id": "missing"}).status_code == 404
     with factory() as db:
         db.add(m.SkuForecast(run_id="r1", sku_code="001", explanation={},

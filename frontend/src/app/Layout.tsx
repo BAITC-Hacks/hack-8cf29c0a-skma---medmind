@@ -53,7 +53,7 @@ function Header({ onOpenMenu, menuOpen }: { onOpenMenu: () => void; menuOpen: bo
     setSelectedRunId(run.id);
   } });
   const running = runs.some(run => run.status === 'running');
-  const options = runs.map((run) => ({ value: run.id, label: `${new Date(run.created_at).toLocaleDateString('ru-RU')} · ${STATUS_LABEL[run.status] ?? run.status}` }));
+  const options = runs.map((run) => ({ value: run.id, label: `${new Date(run.created_at).toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'medium' })} · ${run.id.startsWith('manual-') ? 'ручные заказы' : STATUS_LABEL[run.status] ?? run.status}` }));
   return (
     <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-1 pb-6 pt-2">
       <div className="flex items-center gap-3">

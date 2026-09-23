@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app import models
 from app.db import SessionLocal
 from app.engine.core import EngineInputs, EngineParams, run_engine
+from app.services.input_data import begin_write
 
 log = logging.getLogger(__name__)
 
@@ -43,17 +44,21 @@ def load_inputs(db: Session) -> EngineInputs:
     )
 
 
-def get_params(db: Session) -> models.CalcParams:
+def get_params(db: Session, *, commit: bool = True) -> models.CalcParams:
     params = db.get(models.CalcParams, 1)
     if params is None:
         params = models.CalcParams(id=1)
         db.add(params)
-        db.commit()
+        if commit:
+            db.commit()
+        else:
+            db.flush()
     return params
 
 
 def create_run(db: Session, horizon_days: int | None = None) -> models.CalcRun:
-    p = get_params(db)
+    begin_write(db)
+    p = get_params(db, commit=False)
     now = datetime.now()
     run = models.CalcRun(
         id=f"run-{now:%Y%m%d-%H%M%S}-{uuid.uuid4().hex[:4]}",
